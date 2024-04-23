@@ -1,0 +1,89 @@
+version: "3"
+services:
+  nosql-db:
+    image: mvertes/alpine-mongo
+    ports:
+      - "27018:27017"
+    container_name: nosql-db
+    volumes:
+      - ./db/:/data/db
+
+  feedback:
+    build:
+      dockerfile: Dockerfile
+      context: ./feedback
+    container_name: feedback
+    ports:
+      - "4003:4003"
+    restart: always
+    depends_on:
+      - "nosql-db"
+    volumes:
+      - .:/app
+      - /app/feedback/node_modules
+
+    env_file:
+      - ./feedback/config/config.env
+
+  article:
+    build:
+      dockerfile: Dockerfile
+      context: ./article
+    container_name: article
+    ports:
+      - "4004:4004"
+    restart: always
+    depends_on:
+      - "nosql-db"
+    volumes:
+      - .:/app
+      - /app/article/node_modules
+
+    env_file:
+      - ./article/config/config.env
+
+  complains:
+    build:
+      dockerfile: Dockerfile
+      context: ./complains
+    container_name: complains
+    ports:
+      - "4001:4001"
+    restart: always
+    depends_on:
+      - "nosql-db"
+    volumes:
+      - .:/app
+      - /app/complains/node_modules
+    env_file:
+      - ./complains/config/config.env
+
+
+  user:
+    build:
+      dockerfile: Dockerfile
+      context: ./user
+    container_name: user
+    ports:
+      - "4002:4002"
+    restart: always
+    depends_on:
+      - "nosql-db"
+    volumes:
+      - .:/app/
+      - /app/user/node_modules
+    env_file:
+      - ./user/config/config.env
+
+
+  nginx-proxy:
+    build:
+      dockerfile: Dockerfile
+      context: ./proxy
+    depends_on:
+      - user
+      - feedback
+      - complains
+      - article
+    ports:
+      - 4000:4000
